@@ -1,0 +1,22 @@
+name: Marketplace identity
+
+# Prints the Marketplace user ID of the publishing managed identity. Run it once by hand, then add
+# that ID to the nubisco publisher (Members, role Contributor). See .github/MAINTAINER-SETUP.md.
+on: workflow_dispatch
+
+permissions:
+  id-token: write
+
+jobs:
+  identity:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - name: Marketplace profile
+        run: az rest -u https://app.vssps.visualstudio.com/_apis/profile/profiles/me --resource 499b84ac-1321-427f-aa17-267ca6975798 --query '{id:id, displayName:displayName}'

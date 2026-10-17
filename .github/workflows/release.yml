@@ -10,6 +10,7 @@ permissions:
   contents: write
   issues: write
   pull-requests: write
+  id-token: write # GitHub OIDC token, exchanged for an Entra ID token to publish to the Marketplace
 
 jobs:
   release:
@@ -34,12 +35,20 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # Signs in as the id-github-vscode-publish managed identity through its federated credential, so
+      # no Marketplace token is stored anywhere. The identity holds no Azure roles, hence no subscription.
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
       # semantic-release-vsce packages the .vsix (vscode:prepublish builds it), attaches it to the
       # GitHub release, and publishes to each registry whose token is present.
       - name: Release
         env:
           GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+          VSCE_AZURE_CREDENTIAL: 'true'
           OVSX_PAT: ${{ secrets.OVSX_PAT }}
         run: pnpm exec semantic-release

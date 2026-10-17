@@ -14,25 +14,33 @@ Repository and registry settings that live outside the code.
 - Enable private vulnerability reporting
 - Keep CodeQL enabled (configured in `.github/workflows/codeql-analysis.yml`)
 
-## Release secrets
+## Release credentials
 
-The release workflow runs in the `production` environment and reads:
+The release workflow runs in the `production` environment and uses:
 
-| Secret     | Used for                                                                                   |
-| ---------- | ------------------------------------------------------------------------------------------ |
-| `GH_TOKEN` | Creating the GitHub release and pushing the `chore(release)` commit past branch protection |
-| `VSCE_PAT` | Publishing to the VS Code Marketplace (Azure DevOps token, scope Marketplace > Manage)     |
-| `OVSX_PAT` | Publishing to Open VSX, which is what VSCodium, Cursor and other forks install from        |
+| Name              | Kind     | Used for                                                                                   |
+| ----------------- | -------- | ------------------------------------------------------------------------------------------ |
+| `GH_TOKEN`        | secret   | Creating the GitHub release and pushing the `chore(release)` commit past branch protection |
+| `AZURE_CLIENT_ID` | variable | Client ID of the `id-github-vscode-publish` managed identity                               |
+| `AZURE_TENANT_ID` | variable | The Entra ID tenant that holds it                                                          |
+| `OVSX_PAT`        | secret   | Publishing to Open VSX, which is what VSCodium, Cursor and other forks install from        |
 
-A registry whose token is missing is skipped, and the `.vsix` is still attached to the GitHub release.
+A registry whose credential is missing fails the release, so set both before relying on it.
 
-### VS Code Marketplace
+### VS Code Marketplace (Entra ID, no token)
 
-1. Sign in at https://marketplace.visualstudio.com/manage with the account that owns the `nubisco`
-   publisher (create the publisher with ID `nubisco` if it does not exist yet).
-2. In Azure DevOps (https://dev.azure.com), create a Personal Access Token with organization
-   **All accessible organizations** and scope **Marketplace > Manage**.
-3. Store it as the `VSCE_PAT` secret.
+Azure DevOps personal access tokens are retired on 2026-12-01, so the Marketplace is published to
+with a managed identity that GitHub Actions signs in as through OIDC. Nothing secret is stored.
+
+- Publisher `nubisco`, owned by `tools@nubisco.io`, at https://marketplace.visualstudio.com/manage.
+- Azure subscription `nubisco-ci`, resource group `rg-nubisco-publishing` (North Europe), user-assigned
+  managed identity `id-github-vscode-publish`. It holds no Azure roles and costs nothing.
+- Federated credential `github-vscode-nubisco-production`, issuer
+  `https://token.actions.githubusercontent.com`, subject
+  `repo:nubisco@98131474/vscode-nubisco@1423159124:environment:production`. GitHub issues immutable
+  subjects for this repository, so renaming the repo or org does not break it, but recreating it does.
+- The identity is a **Contributor** member of the publisher. To find the ID to add, run the
+  `Marketplace identity` workflow (`gh workflow run marketplace-identity.yml`) and use the `id` it prints.
 
 ### Open VSX
 
