@@ -25,7 +25,7 @@ The release workflow runs in the `production` environment and uses:
 | `AZURE_TENANT_ID` | variable | The Entra ID tenant that holds it                                                          |
 | `OVSX_PAT`        | secret   | Publishing to Open VSX, which is what VSCodium, Cursor and other forks install from        |
 
-A registry whose credential is missing fails the release, so set both before relying on it.
+Open VSX is skipped while `OVSX_PAT` is unset. The Marketplace is required: if its sign-in fails, nothing is released.
 
 ### VS Code Marketplace (Entra ID, no token)
 
