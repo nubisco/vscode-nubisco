@@ -100,7 +100,7 @@ add its view under the `nubisco` view container in `package.json`.
 
 ## Development
 
-Requirements: Node.js 22, pnpm.
+Requirements: Node.js 24, pnpm.
 
 ```bash
 pnpm install
