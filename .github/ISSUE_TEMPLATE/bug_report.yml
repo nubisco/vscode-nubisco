@@ -1,0 +1,85 @@
+name: Bug report
+description: Report a reproducible problem with the extension
+labels: [bug]
+assignees: [joseporto]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please provide enough detail for maintainers to reproduce it.
+        Do not paste real hostnames you would rather keep private: `ssh.example.com` is fine.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Tunnels
+        - Settings
+        - Installation / updates
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: extension_version
+    attributes:
+      label: Extension version
+      placeholder: 1.0.0
+    validations:
+      required: true
+
+  - type: input
+    id: vscode_version
+    attributes:
+      label: VS Code version
+      description: From Help > About. Say so if you use a fork (Cursor, VSCodium, ...).
+      placeholder: 1.105.0
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: macOS 15 (Apple Silicon), Ubuntu 24.04, ...
+    validations:
+      required: true
+
+  - type: input
+    id: cloudflared_version
+    attributes:
+      label: cloudflared version
+      description: Output of `cloudflared --version`, if the bug involves tunnels.
+
+  - type: textarea
+    id: steps_to_reproduce
+    attributes:
+      label: Reproduction steps
+      placeholder: |
+        1. Add a tunnel with ...
+        2. Click start
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual_behavior
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Screenshots, error messages, or the relevant part of your settings (redacted).

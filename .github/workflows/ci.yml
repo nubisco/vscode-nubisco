@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Lint, test and package
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run lint
+      - run: pnpm run types:check
+      - run: pnpm run format:check
+      - run: pnpm test
+
+      # Packaging is what the release does, so a manifest or .vscodeignore mistake fails here, not at publish time.
+      - run: pnpm run package
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: nubisco-vsix
+          path: nubisco.vsix

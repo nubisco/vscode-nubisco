@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-12 -12 344 344" fill="none">
+  <!-- Outline of the Nubisco "N" (nubisco-corporate/public/logo.svg): the three ribbons, back to front.
+       Each ribbon's outline is hidden where a ribbon in front of it overlaps. -->
+  <defs>
+    <path id="left" d="M 48.655 381.922 C 119.827 257.14 51.704 41.212 190.566 36.855 C 173.148 402.723 82.723 380.123 48.655 381.922 Z"/>
+    <path id="right" d="M 313.875 381.893 C 288.098 381.893 268.627 375.477 253.751 364.466 C 216.182 182.535 312.866 21.948 394.655 36.85 C 335.339 159.09 350.166 381.893 313.875 381.893 Z"/>
+    <path id="middle" d="M 313.875 381.893 C 139.653 381.893 253.533 88.786 126.916 65.199 C 141.046 48.182 160.854 37.738 190.253 36.815 C 311.395 48.025 251.672 276.857 313.875 381.893 Z"/>
+    <mask id="behind-middle" maskUnits="userSpaceOnUse" x="-100" y="-100" width="600" height="600">
+      <rect x="-100" y="-100" width="600" height="600" fill="#fff"/>
+      <use href="#middle" fill="#000"/>
+    </mask>
+    <mask id="behind-right-middle" maskUnits="userSpaceOnUse" x="-100" y="-100" width="600" height="600">
+      <rect x="-100" y="-100" width="600" height="600" fill="#fff"/>
+      <use href="#right" fill="#000"/>
+      <use href="#middle" fill="#000"/>
+    </mask>
+  </defs>
+  <g transform="matrix(0.924856, 0, 0, 0.924856, -44.998852, -33.191986)" stroke="#c5c5c5" stroke-width="22" stroke-linejoin="round" stroke-linecap="round">
+    <use href="#left" mask="url(#behind-right-middle)"/>
+    <use href="#right" mask="url(#behind-middle)"/>
+    <use href="#middle"/>
+  </g>
+</svg>

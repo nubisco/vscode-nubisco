@@ -1,0 +1,345 @@
+{
+  "name": "nubisco",
+  "displayName": "Nubisco",
+  "description": "Small everyday developer tools for VS Code, starting with a Cloudflare Access tunnel switcher",
+  "version": "0.1.0",
+  "publisher": "nubisco",
+  "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nubisco/vscode-nubisco.git"
+  },
+  "homepage": "https://github.com/nubisco/vscode-nubisco#readme",
+  "bugs": {
+    "url": "https://github.com/nubisco/vscode-nubisco/issues"
+  },
+  "sponsor": {
+    "url": "https://github.com/sponsors/joseporto"
+  },
+  "icon": "media/icon.png",
+  "galleryBanner": {
+    "color": "#1e1e1e",
+    "theme": "dark"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "extensionKind": [
+    "ui"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    },
+    "virtualWorkspaces": true
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "cloudflare",
+    "cloudflared",
+    "tunnel",
+    "zero trust",
+    "ssh",
+    "access"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "nubisco",
+          "title": "Nubisco",
+          "icon": "media/nubisco.svg"
+        }
+      ]
+    },
+    "views": {
+      "nubisco": [
+        {
+          "id": "nubisco.tunnels",
+          "name": "Tunnels",
+          "icon": "media/nubisco.svg"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "nubisco.tunnels.refresh",
+        "title": "Refresh Tunnels",
+        "category": "Nubisco",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "nubisco.tunnels.pick",
+        "title": "Toggle Tunnel…",
+        "category": "Nubisco",
+        "icon": "$(plug)"
+      },
+      {
+        "command": "nubisco.tunnels.start",
+        "title": "Start Tunnel",
+        "category": "Nubisco",
+        "icon": "$(debug-start)"
+      },
+      {
+        "command": "nubisco.tunnels.stop",
+        "title": "Stop Tunnel",
+        "category": "Nubisco",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "nubisco.tunnels.copy",
+        "title": "Copy to Clipboard",
+        "category": "Nubisco",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "nubisco.tunnels.add",
+        "title": "Add Tunnel…",
+        "category": "Nubisco",
+        "icon": "$(add)"
+      },
+      {
+        "command": "nubisco.tunnels.edit",
+        "title": "Edit Tunnel…",
+        "category": "Nubisco",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "nubisco.tunnels.remove",
+        "title": "Remove Tunnel",
+        "category": "Nubisco",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "nubisco.tunnels.openSettings",
+        "title": "Open Tunnel Settings",
+        "category": "Nubisco",
+        "icon": "$(settings-gear)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "nubisco.tunnels.add",
+          "when": "view == nubisco.tunnels",
+          "group": "navigation@1"
+        },
+        {
+          "command": "nubisco.tunnels.pick",
+          "when": "view == nubisco.tunnels",
+          "group": "navigation@2"
+        },
+        {
+          "command": "nubisco.tunnels.refresh",
+          "when": "view == nubisco.tunnels",
+          "group": "navigation@3"
+        },
+        {
+          "command": "nubisco.tunnels.openSettings",
+          "when": "view == nubisco.tunnels",
+          "group": "settings@1"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "nubisco.tunnels.start",
+          "when": "view == nubisco.tunnels && viewItem == tunnel.stopped",
+          "group": "inline"
+        },
+        {
+          "command": "nubisco.tunnels.stop",
+          "when": "view == nubisco.tunnels && viewItem == tunnel.running",
+          "group": "inline"
+        },
+        {
+          "command": "nubisco.tunnels.copy",
+          "when": "view == nubisco.tunnels && viewItem == tunnel.instruction",
+          "group": "inline"
+        },
+        {
+          "command": "nubisco.tunnels.edit",
+          "when": "view == nubisco.tunnels && viewItem =~ /^tunnel\\.(running|stopped|busy)$/",
+          "group": "1_modify@1"
+        },
+        {
+          "command": "nubisco.tunnels.remove",
+          "when": "view == nubisco.tunnels && viewItem =~ /^tunnel\\.(running|stopped|busy)$/",
+          "group": "1_modify@2"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "nubisco.tunnels.start",
+          "when": "false"
+        },
+        {
+          "command": "nubisco.tunnels.stop",
+          "when": "false"
+        },
+        {
+          "command": "nubisco.tunnels.copy",
+          "when": "false"
+        },
+        {
+          "command": "nubisco.tunnels.edit",
+          "when": "false"
+        },
+        {
+          "command": "nubisco.tunnels.remove",
+          "when": "false"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Nubisco",
+      "properties": {
+        "nubisco.tunnels.cloudflaredPath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Absolute path to the `cloudflared` binary. Leave empty to auto-detect (Homebrew locations, then `PATH`).",
+          "scope": "machine"
+        },
+        "nubisco.tunnels.pollInterval": {
+          "type": "number",
+          "default": 3000,
+          "minimum": 1000,
+          "description": "How often (in milliseconds) to check which tunnels are listening.",
+          "scope": "application"
+        },
+        "nubisco.tunnels.definitions": {
+          "type": "array",
+          "default": [],
+          "markdownDescription": "Tunnels shown in the Nubisco Tunnels view. Each one runs `cloudflared access tcp --hostname <host> --url localhost:<port>`. Use **Add Tunnel** in the view, or edit this list directly.",
+          "items": {
+            "type": "object",
+            "required": [
+              "host",
+              "port"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "host": {
+                "type": "string",
+                "description": "Cloudflare Access hostname of the TCP application, e.g. ssh.example.com."
+              },
+              "port": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 65535,
+                "description": "Local port to listen on. Must be unique across tunnels."
+              },
+              "label": {
+                "type": "string",
+                "description": "Display name. Defaults to the hostname."
+              },
+              "instructions": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "How to connect once the tunnel is up; each entry can be clicked to copy."
+              }
+            }
+          },
+          "scope": "application",
+          "examples": [
+            [
+              {
+                "host": "ssh.example.com",
+                "port": 2222,
+                "label": "Home server · SSH",
+                "instructions": [
+                  "ssh -p 2222 me@localhost"
+                ]
+              }
+            ]
+          ]
+        }
+      }
+    },
+    "viewsWelcome": [
+      {
+        "view": "nubisco.tunnels",
+        "contents": "No tunnels yet. A tunnel opens a local port to a Cloudflare Access TCP application using `cloudflared access tcp`.\n[Add Tunnel](command:nubisco.tunnels.add)\nYou can also define tunnels in [settings](command:nubisco.tunnels.openSettings)."
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm run build",
+    "build": "node build.js",
+    "watch": "node build.js --watch",
+    "package": "vsce package -o nubisco.vsix",
+    "install:local": "pnpm run package && code --install-extension nubisco.vsix --force",
+    "types:check": "tsc --noEmit -p tsconfig.eslint.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src/ tests/",
+    "lint:fix": "eslint --fix src/ tests/",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "@eslint/js": "latest",
+    "@semantic-release/changelog": "^7.0.0",
+    "@semantic-release/git": "^11.0.1",
+    "@types/node": "^20",
+    "@types/vscode": "~1.90.0",
+    "@vscode/vsce": "latest",
+    "esbuild": "latest",
+    "eslint": "latest",
+    "eslint-config-prettier": "latest",
+    "prettier": "latest",
+    "semantic-release": "^25.0.9",
+    "semantic-release-vsce": "^6.1.8",
+    "typescript": "^6",
+    "typescript-eslint": "latest",
+    "vitest": "latest"
+  },
+  "vsce": {
+    "dependencies": false
+  },
+  "release": {
+    "branches": [
+      "master"
+    ],
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/changelog",
+      [
+        "semantic-release-vsce",
+        {
+          "packageVsix": "nubisco.vsix"
+        }
+      ],
+      [
+        "@semantic-release/github",
+        {
+          "assets": [
+            {
+              "path": "nubisco.vsix",
+              "label": "nubisco.vsix"
+            }
+          ]
+        }
+      ],
+      [
+        "@semantic-release/git",
+        {
+          "assets": [
+            "package.json",
+            "CHANGELOG.md"
+          ],
+          "message": "chore(release): ${nextRelease.version} [skip ci]"
+        }
+      ]
+    ]
+  }
+}
