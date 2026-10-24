@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/nubisco/vscode-nubisco/compare/v1.0.1...v1.1.0) (2026-10-24)
+
+
+### Features
+
+* wake machines with Wake-on-LAN ([f77601a](https://github.com/nubisco/vscode-nubisco/commit/f77601ac127a8aad69218a03ba11b882b7294933))
+
 ## [1.0.1](https://github.com/nubisco/vscode-nubisco/compare/v1.0.0...v1.0.1) (2026-10-18)
 
 
