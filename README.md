@@ -40,6 +40,26 @@ up as running, and stopping it from the view stops it.
 When you work in a remote window (Remote SSH, Dev Containers, WSL), the extension still runs
 on your local machine, so tunnels open on the machine you are sitting at.
 
+### Machines (Wake-on-LAN)
+
+Wake a sleeping machine with a Wake-on-LAN magic packet, from wherever you are.
+
+- **Your own machines:** click **+** in the Machines view, or run `Nubisco: Add Machine…`,
+  and enter a MAC address and a name. The other fields are optional.
+- **Wake:** click the inline ⚡ button on a machine, or run `Nubisco: Wake Machine…` for a quick pick.
+- **On the machine's network**, the packet is broadcast straight from your computer.
+- **On another network**, the packet is sent by a `relay`: any SSH host on the machine's
+  network that has `python3` (a NAS or a Raspberry Pi works). An alias from `~/.ssh/config`
+  works, including one that goes through `cloudflared access ssh`. The extension opens one
+  shared SSH connection to the relay per wake, so a Cloudflare Access login happens once.
+- **Confirming it woke up:** set `ssh` and `afterWake`, and the extension runs the command
+  on the machine once it answers, sending a fresh packet up to three times until it does.
+  When you are away, that SSH connection goes through the relay too.
+
+A sleeping Mac usually wakes from a magic packet into a _dark wake_: the network comes up for
+about ten seconds with the display off, then it goes back to sleep, and Screen Sharing never
+becomes reachable. Set `afterWake` to `caffeinate -u -t 5` to turn that into a full wake.
+
 ## Install
 
 Search for **Nubisco** in the Extensions view, or:
@@ -80,6 +100,27 @@ or run a program you did not configure yourself.
 | `nubisco.tunnels.cloudflaredPath` | `""`    | Path to `cloudflared`. When empty, the extension looks in `/opt/homebrew/bin`, then `/usr/local/bin`, then `PATH`. Machine-scoped. |
 | `nubisco.tunnels.pollInterval`    | `3000`  | How often (ms) to check which ports are listening.                                                                                 |
 
+Machines are saved in your **user** settings for the same reason: a repository can never
+make the extension SSH somewhere or run a command you did not configure yourself.
+
+```jsonc
+"nubisco.wake.machines": [
+  {
+    "label": "Office desktop",          // display name (defaults to the MAC)
+    "mac": "aa:bb:cc:dd:ee:ff",         // MAC address (required)
+    "address": "192.168.1.20",          // used to tell whether you are on its network
+    "broadcast": "192.168.1.255",       // optional, for a relay with several networks
+    "relay": "gateway-remote",          // SSH host that sends the packet when you are away
+    "ssh": "me@192.168.1.20",           // the machine itself, key-based login
+    "afterWake": "caffeinate -u -t 5"   // run once it answers
+  }
+]
+```
+
+| Setting                 | Default | Description                                                                                 |
+| ----------------------- | ------- | ------------------------------------------------------------------------------------------- |
+| `nubisco.wake.machines` | `[]`    | Your machines (see above). Invalid or duplicate entries are skipped, and you get a warning. |
+
 ## Architecture
 
 ```
@@ -92,6 +133,12 @@ src/
       manager.ts            cloudflared spawn / pkill, lsof port check
       state.ts              start/stop state machine + tree presentation (pure)
       index.ts              tree view, status bar, commands
+    wake/
+      config.ts             settings parsing + MAC / IPv4 validation (pure)
+      form.ts               add / edit machine input flow
+      network.ts            magic packet, local subnets, UDP broadcast
+      runner.ts             local or relayed send, SSH afterWake with retries
+      index.ts              tree view, commands
 ```
 
 To add a tool, create `src/features/<name>/index.ts` that exports a

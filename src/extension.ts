@@ -1,8 +1,9 @@
 import type * as vscode from 'vscode'
 import { registerTunnels } from './features/tunnels'
+import { registerWake } from './features/wake'
 
 // Each feature registers its own views, commands and settings. Add new ones here.
-const FEATURES: readonly ((context: vscode.ExtensionContext) => void)[] = [registerTunnels]
+const FEATURES: readonly ((context: vscode.ExtensionContext) => void)[] = [registerTunnels, registerWake]
 
 export function activate(context: vscode.ExtensionContext): void {
   for (const register of FEATURES) register(context)

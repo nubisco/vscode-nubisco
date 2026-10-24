@@ -1,7 +1,7 @@
 {
   "name": "nubisco",
   "displayName": "Nubisco",
-  "description": "Small everyday developer tools for VS Code, starting with a Cloudflare Access tunnel switcher",
+  "description": "Small everyday developer tools for VS Code: a Cloudflare Access tunnel switcher and Wake-on-LAN for your machines",
   "version": "1.0.1",
   "packageManager": "pnpm@12.3.4+sha512.961aa41fb077da3a04a441d9f8e15ebc0c96da8ef710b2eb67bf9ee7cb0610eabd48f1fd85f51cffe73846785fa0f87c56a3a872a1d893f8446741b5cce45457",
   "publisher": "nubisco",
@@ -44,7 +44,9 @@
     "tunnel",
     "zero trust",
     "ssh",
-    "access"
+    "access",
+    "wake-on-lan",
+    "wol"
   ],
   "main": "./dist/extension.js",
   "activationEvents": [
@@ -65,6 +67,11 @@
         {
           "id": "nubisco.tunnels",
           "name": "Tunnels",
+          "icon": "media/nubisco.svg"
+        },
+        {
+          "id": "nubisco.machines",
+          "name": "Machines",
           "icon": "media/nubisco.svg"
         }
       ]
@@ -123,6 +130,42 @@
         "title": "Open Tunnel Settings",
         "category": "Nubisco",
         "icon": "$(settings-gear)"
+      },
+      {
+        "command": "nubisco.wake.wake",
+        "title": "Wake Machine",
+        "category": "Nubisco",
+        "icon": "$(zap)"
+      },
+      {
+        "command": "nubisco.wake.pick",
+        "title": "Wake Machine…",
+        "category": "Nubisco",
+        "icon": "$(zap)"
+      },
+      {
+        "command": "nubisco.wake.add",
+        "title": "Add Machine…",
+        "category": "Nubisco",
+        "icon": "$(add)"
+      },
+      {
+        "command": "nubisco.wake.edit",
+        "title": "Edit Machine…",
+        "category": "Nubisco",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "nubisco.wake.remove",
+        "title": "Remove Machine",
+        "category": "Nubisco",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "nubisco.wake.openSettings",
+        "title": "Open Machine Settings",
+        "category": "Nubisco",
+        "icon": "$(settings-gear)"
       }
     ],
     "menus": {
@@ -145,6 +188,21 @@
         {
           "command": "nubisco.tunnels.openSettings",
           "when": "view == nubisco.tunnels",
+          "group": "settings@1"
+        },
+        {
+          "command": "nubisco.wake.add",
+          "when": "view == nubisco.machines",
+          "group": "navigation@1"
+        },
+        {
+          "command": "nubisco.wake.pick",
+          "when": "view == nubisco.machines",
+          "group": "navigation@2"
+        },
+        {
+          "command": "nubisco.wake.openSettings",
+          "when": "view == nubisco.machines",
           "group": "settings@1"
         }
       ],
@@ -173,6 +231,21 @@
           "command": "nubisco.tunnels.remove",
           "when": "view == nubisco.tunnels && viewItem =~ /^tunnel\\.(running|stopped|busy)$/",
           "group": "1_modify@2"
+        },
+        {
+          "command": "nubisco.wake.wake",
+          "when": "view == nubisco.machines && viewItem == machine.idle",
+          "group": "inline"
+        },
+        {
+          "command": "nubisco.wake.edit",
+          "when": "view == nubisco.machines && viewItem =~ /^machine\\./",
+          "group": "1_modify@1"
+        },
+        {
+          "command": "nubisco.wake.remove",
+          "when": "view == nubisco.machines && viewItem =~ /^machine\\./",
+          "group": "1_modify@2"
         }
       ],
       "commandPalette": [
@@ -194,6 +267,18 @@
         },
         {
           "command": "nubisco.tunnels.remove",
+          "when": "false"
+        },
+        {
+          "command": "nubisco.wake.wake",
+          "when": "false"
+        },
+        {
+          "command": "nubisco.wake.edit",
+          "when": "false"
+        },
+        {
+          "command": "nubisco.wake.remove",
           "when": "false"
         }
       ]
@@ -262,6 +347,61 @@
               }
             ]
           ]
+        },
+        "nubisco.wake.machines": {
+          "type": "array",
+          "default": [],
+          "markdownDescription": "Machines shown in the Nubisco Machines view, woken with a Wake-on-LAN magic packet. On the machine's network the packet is broadcast from here. Elsewhere it is sent by `relay` over SSH (which needs `python3` there). When `ssh` and `afterWake` are set, the command runs on the machine once it answers, retrying up to three times.",
+          "items": {
+            "type": "object",
+            "required": [
+              "mac"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "label": {
+                "type": "string",
+                "description": "Display name. Defaults to the MAC address."
+              },
+              "mac": {
+                "type": "string",
+                "description": "MAC address of the network card that listens for Wake-on-LAN, e.g. aa:bb:cc:dd:ee:ff."
+              },
+              "address": {
+                "type": "string",
+                "description": "The machine's IPv4 address. Used to tell whether you are on its network."
+              },
+              "broadcast": {
+                "type": "string",
+                "description": "Directed broadcast address of the machine's network, e.g. 192.168.1.255. Needed by the relay when its network has several interfaces."
+              },
+              "relay": {
+                "type": "string",
+                "markdownDescription": "SSH destination on the machine's network (an alias from `~/.ssh/config` works) that sends the packet when you are on another network. Requires `address` or `broadcast`."
+              },
+              "ssh": {
+                "type": "string",
+                "markdownDescription": "SSH destination of the machine itself, e.g. `me@192.168.1.20`. Reached through `relay` when you are on another network. Needs key-based login."
+              },
+              "afterWake": {
+                "type": "string",
+                "markdownDescription": "Command run on the machine over `ssh` once it answers. On a Mac, `caffeinate -u -t 5` turns the short dark wake a magic packet gives into a full wake."
+              }
+            }
+          },
+          "scope": "application",
+          "examples": [
+            [
+              {
+                "label": "Office desktop",
+                "mac": "aa:bb:cc:dd:ee:ff",
+                "address": "192.168.1.20",
+                "relay": "gateway-remote",
+                "ssh": "me@192.168.1.20",
+                "afterWake": "caffeinate -u -t 5"
+              }
+            ]
+          ]
         }
       }
     },
@@ -269,6 +409,10 @@
       {
         "view": "nubisco.tunnels",
         "contents": "No tunnels yet. A tunnel opens a local port to a Cloudflare Access TCP application using `cloudflared access tcp`.\n[Add Tunnel](command:nubisco.tunnels.add)\nYou can also define tunnels in [settings](command:nubisco.tunnels.openSettings)."
+      },
+      {
+        "view": "nubisco.machines",
+        "contents": "No machines yet. Wake a sleeping machine with a Wake-on-LAN magic packet, from its network or through an SSH relay.\n[Add Machine](command:nubisco.wake.add)\nYou can also define machines in [settings](command:nubisco.wake.openSettings)."
       }
     ]
   },
