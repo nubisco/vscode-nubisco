@@ -20,7 +20,15 @@ const mockExecFile = vi.mocked(execFile)
 const mockSpawn = vi.mocked(spawn)
 const mockExists = vi.mocked(existsSync)
 
-const tunnel: Tunnel = { id: '9999', host: 'test.example.io', port: 9999, label: 'Test', instructions: [] }
+const tunnel: Tunnel = {
+  id: '9999',
+  host: 'test.example.io',
+  port: 9999,
+  label: 'Test',
+  instructions: [],
+  warp: undefined,
+  mode: undefined,
+}
 
 function execFileResult(error: Error | null) {
   mockExecFile.mockImplementation(((_file: string, _args: string[], cb: (e: Error | null) => void) => {

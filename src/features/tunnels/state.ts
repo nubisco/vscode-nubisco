@@ -30,11 +30,18 @@ export interface Presentation {
   readonly expandable: boolean
 }
 
-export function present(port: number, state: TunnelState): Presentation {
+/** Where a WARP-mode tunnel goes: the machine's address, and whether WARP is carrying it. */
+export interface WarpEndpoint {
+  readonly address: string
+  readonly viaWarp: boolean
+}
+
+/** `warp` is set when the tunnel runs in WARP mode: it is then reached at the machine's address, not a local port. */
+export function present(port: number, state: TunnelState, warp?: WarpEndpoint): Presentation {
   switch (state) {
     case 'running':
       return {
-        description: `localhost:${port}`,
+        description: warp ? `${warp.address} · ${warp.viaWarp ? 'WARP' : 'direct'}` : `localhost:${port}`,
         icon: 'circle-filled',
         color: 'testing.iconPassed',
         contextValue: 'tunnel.running',
@@ -58,7 +65,7 @@ export function present(port: number, state: TunnelState): Presentation {
       }
     case 'stopped':
       return {
-        description: `:${port}`,
+        description: warp ? `WARP · ${warp.address}` : `:${port}`,
         icon: 'circle-outline',
         color: 'disabledForeground',
         contextValue: 'tunnel.stopped',

@@ -46,3 +46,11 @@ describe('present', () => {
     expect(present(1, 'stopping').icon).toBe('loading~spin')
   })
 })
+
+describe('present in WARP mode', () => {
+  it('shows the machine address and how it is reached instead of a local port', () => {
+    expect(present(5901, 'running', { address: '10.0.0.5', viaWarp: true }).description).toBe('10.0.0.5 · WARP')
+    expect(present(5901, 'running', { address: '10.0.0.5', viaWarp: false }).description).toBe('10.0.0.5 · direct')
+    expect(present(5901, 'stopped', { address: '10.0.0.5', viaWarp: false }).description).toBe('WARP · 10.0.0.5')
+  })
+})

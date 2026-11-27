@@ -22,7 +22,8 @@ Adds a **Nubisco** entry to the activity bar. Each tool is a separate view insid
 ### Tunnels
 
 Start and stop [Cloudflare Access TCP](https://developers.cloudflare.com/cloudflare-one/applications/non-http/)
-tunnels (`cloudflared access tcp`) without leaving the editor.
+tunnels (`cloudflared access tcp`) without leaving the editor, or reach a machine at its own
+LAN address through [Cloudflare WARP](#warp-mode).
 
 - **Your own tunnels:** nothing ships preconfigured. Click **+** in the view, or run
   `Nubisco: Add Tunnel…`, and enter a hostname, a local port, a name and an optional
@@ -39,6 +40,37 @@ up as running, and stopping it from the view stops it.
 
 When you work in a remote window (Remote SSH, Dev Containers, WSL), the extension still runs
 on your local machine, so tunnels open on the machine you are sitting at.
+
+#### WARP mode
+
+A TCP forward shows the far end as one stream on `localhost`. Most tools do not mind, but macOS
+Screen Sharing does: through a forward it falls back to plain VNC, so the remote display keeps
+its own resolution instead of adapting to your window, and High Performance mode is unavailable.
+
+Give a tunnel a `warp` target and it can run in **WARP mode** instead. The extension then reaches
+the machine at its real LAN address, over TCP and UDP, through the
+[Cloudflare WARP client](https://developers.cloudflare.com/cloudflare-one/connections/connect-devices/warp/)
+and a private network route on your tunnel:
+
+1. If the machine already answers (you are on its network, or WARP is already up), it just opens it.
+2. Otherwise it connects WARP with `warp-cli`, waits for the machine, and opens `<scheme>://<address>`.
+3. **Stop** disconnects WARP only if Nubisco (or the `tunnels` CLI) connected it. A WARP connection you
+   made yourself is left alone, so Stop then just opens the machine. Clicking a running WARP tunnel opens it too.
+
+In WARP mode the dot means the machine answers on `warp.port`, not that a process is running.
+The row says whether it is reached through WARP or directly, and the status bar shows a cloud
+while WARP is connected. Right-click a tunnel and choose **Switch Mode (TCP / WARP)** to fall back
+to the TCP forward at any time. The `tunnels` CLI shares the same record of who connected WARP,
+so either can undo what the other did.
+
+What WARP mode needs on the Cloudflare side:
+
+- a private network route on the tunnel that covers the address (`cloudflared tunnel route ip add <address>/32 <tunnel>`)
+  and WARP routing enabled on the tunnel;
+- Split Tunnels that do not exclude the address (the default list excludes `192.168.0.0/16`);
+- the Gateway proxy turned on for TCP and UDP;
+- the WARP client enrolled in your Zero Trust team. A fresh install registers itself as a personal
+  1.1.1.1 client, which connects but never sees private routes. The extension tells you when that is the case.
 
 ### Machines (Wake-on-LAN)
 
@@ -90,6 +122,18 @@ or run a program you did not configure yourself.
     "port": 2222,                       // local port, unique per tunnel (required)
     "label": "Home server · SSH",       // display name (defaults to the host)
     "instructions": ["ssh -p 2222 me@localhost"] // hints, click to copy
+  },
+  {
+    "host": "vnc.example.com",
+    "port": 5901,
+    "label": "Office Mac · Screen Sharing",
+    "instructions": ["open vnc://localhost:5901"], // TCP mode hints
+    "warp": {
+      "address": "192.168.1.20",        // the machine's LAN address (required for WARP)
+      "port": 5900,                     // checked to tell whether it answers (required)
+      "scheme": "vnc"                   // opens vnc://192.168.1.20 once it answers
+    },
+    "mode": "warp"                      // "tcp" or "warp", overrides defaultMode
   }
 ]
 ```
@@ -99,6 +143,7 @@ or run a program you did not configure yourself.
 | `nubisco.tunnels.definitions`     | `[]`    | Your tunnels (see above). Invalid or duplicate entries are skipped, and you get a warning.                                         |
 | `nubisco.tunnels.cloudflaredPath` | `""`    | Path to `cloudflared`. When empty, the extension looks in `/opt/homebrew/bin`, then `/usr/local/bin`, then `PATH`. Machine-scoped. |
 | `nubisco.tunnels.pollInterval`    | `3000`  | How often (ms) to check which ports are listening.                                                                                 |
+| `nubisco.tunnels.defaultMode`     | `"tcp"` | Mode for tunnels that have a `warp` target and no `mode` of their own. Tunnels without one always use TCP.                         |
 
 Machines are saved in your **user** settings for the same reason: a repository can never
 make the extension SSH somewhere or run a command you did not configure yourself.
@@ -130,8 +175,9 @@ src/
     tunnels/
       config.ts             settings parsing + input validation (pure)
       form.ts               add / edit tunnel input flow
-      manager.ts            cloudflared spawn / pkill, lsof port check
+      manager.ts            cloudflared spawn / pkill, lsof port check (TCP mode)
       state.ts              start/stop state machine + tree presentation (pure)
+      warp.ts               warp-cli status / connect / disconnect, reachability, who-connected marker
       index.ts              tree view, status bar, commands
     wake/
       config.ts             settings parsing + MAC / IPv4 validation (pure)

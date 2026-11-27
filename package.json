@@ -1,7 +1,7 @@
 {
   "name": "nubisco",
   "displayName": "Nubisco",
-  "description": "Small everyday developer tools for VS Code: a Cloudflare Access tunnel switcher and Wake-on-LAN for your machines",
+  "description": "Small everyday developer tools for VS Code: a Cloudflare tunnel switcher (Access TCP or WARP) and Wake-on-LAN for your machines",
   "version": "1.1.0",
   "packageManager": "pnpm@12.3.4+sha512.961aa41fb077da3a04a441d9f8e15ebc0c96da8ef710b2eb67bf9ee7cb0610eabd48f1fd85f51cffe73846785fa0f87c56a3a872a1d893f8446741b5cce45457",
   "publisher": "nubisco",
@@ -45,6 +45,7 @@
     "zero trust",
     "ssh",
     "access",
+    "warp",
     "wake-on-lan",
     "wol"
   ],
@@ -124,6 +125,18 @@
         "title": "Remove Tunnel",
         "category": "Nubisco",
         "icon": "$(trash)"
+      },
+      {
+        "command": "nubisco.tunnels.switchMode",
+        "title": "Switch Mode (TCP / WARP)",
+        "category": "Nubisco",
+        "icon": "$(arrow-swap)"
+      },
+      {
+        "command": "nubisco.tunnels.open",
+        "title": "Open Machine",
+        "category": "Nubisco",
+        "icon": "$(link-external)"
       },
       {
         "command": "nubisco.tunnels.openSettings",
@@ -209,12 +222,12 @@
       "view/item/context": [
         {
           "command": "nubisco.tunnels.start",
-          "when": "view == nubisco.tunnels && viewItem == tunnel.stopped",
+          "when": "view == nubisco.tunnels && viewItem =~ /^tunnel\\.stopped(\\.switchable)?$/",
           "group": "inline"
         },
         {
           "command": "nubisco.tunnels.stop",
-          "when": "view == nubisco.tunnels && viewItem == tunnel.running",
+          "when": "view == nubisco.tunnels && viewItem =~ /^tunnel\\.running(\\.switchable)?$/",
           "group": "inline"
         },
         {
@@ -224,13 +237,18 @@
         },
         {
           "command": "nubisco.tunnels.edit",
-          "when": "view == nubisco.tunnels && viewItem =~ /^tunnel\\.(running|stopped|busy)$/",
+          "when": "view == nubisco.tunnels && viewItem =~ /^tunnel\\.(running|stopped|busy)(\\.switchable)?$/",
           "group": "1_modify@1"
         },
         {
           "command": "nubisco.tunnels.remove",
-          "when": "view == nubisco.tunnels && viewItem =~ /^tunnel\\.(running|stopped|busy)$/",
+          "when": "view == nubisco.tunnels && viewItem =~ /^tunnel\\.(running|stopped|busy)(\\.switchable)?$/",
           "group": "1_modify@2"
+        },
+        {
+          "command": "nubisco.tunnels.switchMode",
+          "when": "view == nubisco.tunnels && viewItem =~ /^tunnel\\.(running|stopped)\\.switchable$/",
+          "group": "1_modify@3"
         },
         {
           "command": "nubisco.wake.wake",
@@ -270,6 +288,14 @@
           "when": "false"
         },
         {
+          "command": "nubisco.tunnels.switchMode",
+          "when": "false"
+        },
+        {
+          "command": "nubisco.tunnels.open",
+          "when": "false"
+        },
+        {
           "command": "nubisco.wake.wake",
           "when": "false"
         },
@@ -299,10 +325,24 @@
           "description": "How often (in milliseconds) to check which tunnels are listening.",
           "scope": "application"
         },
+        "nubisco.tunnels.defaultMode": {
+          "type": "string",
+          "enum": [
+            "tcp",
+            "warp"
+          ],
+          "default": "tcp",
+          "enumDescriptions": [
+            "Forward a local port with `cloudflared access tcp`.",
+            "Reach the machine at its own address through Cloudflare WARP."
+          ],
+          "markdownDescription": "Mode for tunnels that have a `warp` target and no `mode` of their own. Tunnels without a `warp` target always use TCP.",
+          "scope": "application"
+        },
         "nubisco.tunnels.definitions": {
           "type": "array",
           "default": [],
-          "markdownDescription": "Tunnels shown in the Nubisco Tunnels view. Each one runs `cloudflared access tcp --hostname <host> --url localhost:<port>`. Use **Add Tunnel** in the view, or edit this list directly.",
+          "markdownDescription": "Tunnels shown in the Nubisco Tunnels view. Each one runs `cloudflared access tcp --hostname <host> --url localhost:<port>`. Add a `warp` target to reach the machine at its own LAN address through Cloudflare WARP instead (see `nubisco.tunnels.defaultMode`). Use **Add Tunnel** in the view, or edit this list directly.",
           "items": {
             "type": "object",
             "required": [
@@ -331,6 +371,43 @@
                   "type": "string"
                 },
                 "description": "How to connect once the tunnel is up; each entry can be clicked to copy."
+              },
+              "warp": {
+                "type": "object",
+                "required": [
+                  "address",
+                  "port"
+                ],
+                "additionalProperties": false,
+                "markdownDescription": "The machine's own LAN address, reached through Cloudflare WARP and a private network route on the tunnel. Needed when the client must see the real host over TCP and UDP, such as macOS Screen Sharing's dynamic resolution. The TCP forward stays available as a fallback.",
+                "properties": {
+                  "address": {
+                    "type": "string",
+                    "description": "The machine's LAN IPv4 address, e.g. 192.168.1.20. The tunnel must have a private network route that covers it."
+                  },
+                  "port": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 65535,
+                    "description": "Port checked to tell whether the machine is reachable, e.g. 5900 for Screen Sharing."
+                  },
+                  "scheme": {
+                    "type": "string",
+                    "markdownDescription": "Optional URL scheme opened once the machine answers, e.g. `vnc` opens `vnc://<address>`."
+                  }
+                }
+              },
+              "mode": {
+                "type": "string",
+                "enum": [
+                  "tcp",
+                  "warp"
+                ],
+                "enumDescriptions": [
+                  "cloudflared access tcp forward to localhost:<port>",
+                  "the machine's own address over Cloudflare WARP (needs `warp`)"
+                ],
+                "markdownDescription": "How this tunnel connects. Overrides `nubisco.tunnels.defaultMode`. **Switch Mode** in the view sets it."
               }
             }
           },
@@ -344,6 +421,20 @@
                 "instructions": [
                   "ssh -p 2222 me@localhost"
                 ]
+              },
+              {
+                "host": "vnc.example.com",
+                "port": 5901,
+                "label": "Office Mac · Screen Sharing",
+                "instructions": [
+                  "open vnc://localhost:5901"
+                ],
+                "warp": {
+                  "address": "192.168.1.20",
+                  "port": 5900,
+                  "scheme": "vnc"
+                },
+                "mode": "warp"
               }
             ]
           ]
