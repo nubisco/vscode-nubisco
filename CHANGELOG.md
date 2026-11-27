@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/nubisco/vscode-nubisco/compare/v1.1.0...v1.2.0) (2026-11-27)
+
+
+### Features
+
+* **tunnels:** reach a machine at its LAN address through Cloudflare WARP ([cc005f4](https://github.com/nubisco/vscode-nubisco/commit/cc005f40ddf4539a01c61998552af5b464967273))
+
 # [1.1.0](https://github.com/nubisco/vscode-nubisco/compare/v1.0.1...v1.1.0) (2026-10-24)
 
 
